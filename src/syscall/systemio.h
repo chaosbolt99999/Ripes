@@ -14,6 +14,9 @@
 #include <stdexcept>
 #include <sys/stat.h>
 
+// [jfmcoronel]
+#include <vector>
+
 #include "STLExtras.h"
 #include "statusmanager.h"
 
@@ -402,6 +405,69 @@ public:
     return myBuffer.size();
 
   } // end readFromFile
+
+  /**
+   * [jfmcoronel] Read a 32-bit signed integer from stdin
+   *
+   * @return 32-bit signed integer entered by the user
+   */
+  static int readIntFromStdin() {
+    s_abortSyscall = false;
+    SystemIO::get();
+
+    if (!(FileIOData::fdInUse(STDIN, O_RDONLY) ||
+          FileIOData::fdInUse(STDIN, O_RDWR)))
+    {
+      s_fileErrorString =
+          "File descriptor " + QString::number(STDIN) + " is not open for reading";
+      return 0;
+    }
+
+    auto &InputStream = FileIOData::getStreamInUse(STDIN);
+
+    std::vector<char> digits;
+
+    postToGUIThread([] {
+      SystemIOStatusManager::setStatusTimed("Waiting for user input...",
+                                            99999999);
+    });
+
+    while (true) {
+      FileIOData::s_stdioMutex.lock();
+      if (s_abortSyscall) {
+        FileIOData::s_stdioMutex.unlock();
+        s_abortSyscall = false;
+        postToGUIThread([] { SystemIOStatusManager::clearStatus(); });
+        return -1;
+      }
+      auto readData = InputStream.read(1).toUtf8()[0];
+
+      // [jfmcoronel] `InputStream.read(...)` returns nulls nondeterministically(?)
+      if ('0' <= readData && readData <= '9') {
+        digits.push_back(readData);
+      }
+
+      FileIOData::s_stdinBufferEmpty.wait(&FileIOData::s_stdioMutex, 100);
+      FileIOData::s_stdioMutex.unlock();
+      if (readData == '\n') {
+        break;
+      }
+    }
+
+    if (digits.size() == 0) {
+      Q_ASSERT(false); // EOF should never be possible for STDIN
+    }
+
+    // [jfmcoronel] More robust vs. `std::stoi`
+    int value = 0;
+    for (char c : digits) {
+      value = value * 10 + (c - '0');
+    }
+
+    postToGUIThread([] { SystemIOStatusManager::clearStatus(); });
+
+    return value;
+  } // end readIntFromStdin
 
   /**
    * Write bytes to file.

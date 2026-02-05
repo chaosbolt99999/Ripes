@@ -69,6 +69,9 @@ public:
     // Time syscalls
     emplace<CyclesSyscall<RISCVSyscall>>(RVABI::Cycles);
     emplace<TimeMsSyscall<RISCVSyscall>>(RVABI::TimeMs);
+
+    // Custom syscalls
+    emplace<ReadIntSyscall<RISCVSyscall>>(RVABI::ReadInt);
   }
 };
 

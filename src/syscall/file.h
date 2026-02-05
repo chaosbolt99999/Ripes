@@ -198,4 +198,20 @@ public:
     BaseSyscall::setRet(BaseSyscall::REG_FILE, 0, 0);
   }
 };
+
+template <typename BaseSyscall>
+class ReadIntSyscall : public BaseSyscall {
+  static_assert(std::is_base_of<Syscall, BaseSyscall>::value);
+
+public:
+  ReadIntSyscall()
+      : BaseSyscall("ReadInt", "Read an integer from stdin",
+                    {{0, "register"}},
+                    {{0, "number of read bytes or -1 if an error occurred"}}) {}
+  void execute() {
+    int ret = SystemIO::readIntFromStdin();
+    BaseSyscall::setRet(BaseSyscall::REG_FILE, 0, ret);
+  }
+};
+
 } // namespace Ripes
