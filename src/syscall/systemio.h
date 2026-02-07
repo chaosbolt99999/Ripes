@@ -425,7 +425,7 @@ public:
     auto &InputStream = FileIOData::getStreamInUse(STDIN);
 
     std::vector<char> digits;
-
+    int sign = 1;
     postToGUIThread([] {
       SystemIOStatusManager::setStatusTimed("Waiting for user input...",
                                             99999999);
@@ -440,6 +440,10 @@ public:
         return -1;
       }
       auto readData = InputStream.read(1).toUtf8()[0];
+      
+      if ('-' == readData) {
+        sign = -1;
+      } 
 
       // [jfmcoronel] `InputStream.read(...)` returns nulls nondeterministically(?)
       if ('0' <= readData && readData <= '9') {
@@ -462,6 +466,7 @@ public:
     for (char c : digits) {
       value = value * 10 + (c - '0');
     }
+    value = value*sign;
 
     postToGUIThread([] { SystemIOStatusManager::clearStatus(); });
 
