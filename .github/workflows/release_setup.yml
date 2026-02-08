@@ -7,7 +7,7 @@ on:
 
 jobs:
   release-setup:
-    if: github.repository == 'UPD-DCS/Ripes'
+    if: github.repository == 'chaosbolt99999/Ripes'
     runs-on: ubuntu-latest
     steps:
 
