@@ -63,7 +63,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       if: github.ref == 'refs/heads/master' && matrix.build-type == 'Release'
       with:
-        prerelease: true
+        prerelease: false
         files: ${{ env.APPNAME }}
         tag_name: continuous
       env:
